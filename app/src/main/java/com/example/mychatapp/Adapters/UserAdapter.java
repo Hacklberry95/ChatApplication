@@ -35,6 +35,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.MyHolder> {
     boolean isChat;
     String friendId;
     String theLastMessage;
+    boolean isLastMessageImage;
     FirebaseUser firebaseUser;
 
     public UserAdapter(Context context, List<Users> usersList, boolean isChat) {
@@ -147,17 +148,22 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.MyHolder> {
                                 || chats.getSender().equals(firebaseUser.getUid()) && chats.getReceiver().equals(friendId))
                         {
                             theLastMessage = chats.getMessage();
+                            isLastMessageImage = chats.isIsimage();
                         }
-
                     }
                 }
+
                 switch (theLastMessage)
                 {
                     case "default":
                         lastMsg.setText("No message");
                         break;
                     default:
+                        if(isLastMessageImage){
+                         lastMsg.setText("IMAGE");
+                        }else{
                         lastMsg.setText(theLastMessage);
+                        }
                 }
                 theLastMessage = "default";
             }

@@ -65,24 +65,26 @@
             android:orientation="horizontal">
 
 
-            <ImageButton
+            <Button
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:background="@drawable/camera1"
                 android:layout_margin="10dp"
-                android:id="@+id/camera_gallery_btn"/>
+                android:id="@+id/camera_btn"/>
 
 
             <EditText
+                android:id="@+id/edit_message_text"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
+                android:layout_marginTop="14dp"
+                android:layout_weight="1"
+                android:background="@drawable/et_text"
                 android:hint=" Message"
                 android:inputType="text"
-                android:layout_weight="1"
-                android:textColor="@android:color/black"
-                android:id="@+id/edit_message_text"
-                android:layout_marginTop="14dp"
-                android:background="@drawable/et_text" />
+                android:textColor="@android:color/black" />
+
+
 
 
             <Button
@@ -92,10 +94,6 @@
                 android:background="@drawable/pngegg"
                 android:id="@+id/send_messsage_btn"
                 android:layout_margin="10dp"/>
-
-
-
-
 
 
         </LinearLayout>

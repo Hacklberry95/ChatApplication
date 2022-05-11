@@ -4,10 +4,12 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.test.services.events.TimeStamp;
 
 import com.bumptech.glide.Glide;
 import com.example.mychatapp.Model.Chats;
@@ -15,7 +17,6 @@ import com.example.mychatapp.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.io.Console;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -24,7 +25,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
 
     Context context;
     List<Chats> chatsList;
-    String imageURL;
+    String imageURL, myId;
+    FirebaseUser user;
+    TimeStamp timeStamp;
+
+
 
     public static final int MessageRight = 0; //sender
     public static final int MessageLeft = 1; //receiver
@@ -49,15 +54,21 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
             View view = LayoutInflater.from(context).inflate(R.layout.chat_item_left, parent, false);
             return new MyViewHolder(view);
         }
+
+
     }
 
-    @Override
+
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
-
         Chats chats = chatsList.get(position);
-
-        holder.messageText.setText(chats.getMessage());
-
+        String now = chats.getTime();
+                if(!chats.isIsimage()) {
+                    holder.messageText.setText(chats.getMessage());
+                }else {
+                    holder.messageText.setVisibility(View.GONE);
+                    holder.seen.setVisibility(View.VISIBLE);
+                    Glide.with(context).load(chats.getMessage()).into(holder.messageImage);
+                }
         if (imageURL.equals("default")) {
             holder.imageView.setImageResource(R.drawable.user);
         } else {
@@ -69,7 +80,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
             {
                 holder.seen.setText("Seen");
             }else{
-                holder.seen.setText("Delivered");
+                holder.seen.setText("Delivered: " + now);
             }
         }else {
             holder.seen.setVisibility(View.GONE);
@@ -86,14 +97,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
 
         TextView messageText, seen;
         CircleImageView imageView;
+        ImageView messageImage;
 
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
-
             messageText = itemView.findViewById(R.id.show_message);
             imageView = itemView.findViewById(R.id.chat_image);
             seen = itemView.findViewById(R.id.text_Seen);
+            messageImage = itemView.findViewById(R.id.message_image);
         }
     }
 

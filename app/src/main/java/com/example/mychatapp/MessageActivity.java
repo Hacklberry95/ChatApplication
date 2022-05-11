@@ -1,6 +1,8 @@
 package com.example.mychatapp;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -12,6 +14,7 @@ import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.MediaStore;
@@ -28,13 +31,19 @@ import com.bumptech.glide.Glide;
 import com.example.mychatapp.Adapters.MessageAdapter;
 import com.example.mychatapp.Model.Chats;
 import com.example.mychatapp.Model.Users;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -42,7 +51,10 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -66,11 +78,15 @@ public class MessageActivity extends AppCompatActivity {
     public static final int CAMERA_CODE = 20;
     public static final int GALLERY_CODE = 100;
     Uri imageUri = null;
+    SimpleDateFormat ISO_8601_FORMAT = new SimpleDateFormat("HH:mm");
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_message);
+
 
         toolbar = findViewById(R.id.toolbar_message);
         setSupportActionBar(toolbar);
@@ -90,7 +106,6 @@ public class MessageActivity extends AppCompatActivity {
 
 
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        assert firebaseUser != null;
         myId = firebaseUser.getUid(); //id of the current user logged in
         friendId = getIntent().getStringExtra("friendId"); // this retrieves the friend id when clicked on the item
 
@@ -112,7 +127,7 @@ public class MessageActivity extends AppCompatActivity {
                     Glide.with(getApplicationContext()).load(users.getImageURL()).into(imageViewToolbar);
                 }
                 readMessages(myId, friendId, users.getImageURL());
-                seenMessage(friendId);
+
             }
 
             @Override
@@ -121,7 +136,7 @@ public class MessageActivity extends AppCompatActivity {
             }
         });
 
-
+        seenMessage(friendId);
 
 
 
@@ -161,64 +176,166 @@ public class MessageActivity extends AppCompatActivity {
 
             }
         });
-//        cameraButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                addImage();
-//            }
-//        });
+        cameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Permissions();
+                addImage();
+            }
+        });
 
     }
 
 
-//    private void addImage() {
-//        String[] options = {"Camera", "Gallery"};
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Choose from Gallery or create a new picture?");
-//
-//        builder.setItems(options, new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                if (which == 0) {
-//                    openCamera();
-//                }
-//                if (which == 1) {
-//                    openGallery();
-//                }
-//            }
-//        });
-//        builder.create().show();
-//    }
-//    private void openGallery() {
-//        Intent intent = new Intent(Intent.ACTION_PICK);
-//        intent.setType("image/*"); //allows all types of images
-//        startActivityForResult(intent, GALLERY_CODE);
-//    }
-//
-//    private void openCamera() {
-//        ContentValues values = new ContentValues();
-//        values.put(MediaStore.Images.Media.TITLE, "Temp pick");
-//        values.put(MediaStore.Images.Media.TITLE, "Temp Desc");
-//        imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-//
-//        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-//        startActivityForResult(intent, CAMERA_CODE);
-//    }
-//    private void Permissions() {
-//        Dexter.withContext(this)
-//                .withPermissions(
-//                        Manifest.permission.CAMERA,
-//                        Manifest.permission.READ_EXTERNAL_STORAGE,
-//                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-//                ).withListener(new MultiplePermissionsListener() {
-//            @Override
-//            public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
-//
-//            @Override
-//            public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
-//        }).check();
-//    }
+    private void addImage() {
+        String[] options = {"Camera", "Gallery"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Choose from Gallery or create a new picture?");
+
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) {
+                    openCamera();
+                }
+                if (which == 1) {
+                    openGallery();
+                }
+            }
+        });
+        builder.create().show();
+    }
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*"); //allows all types of images
+        startActivityForResult(intent, GALLERY_CODE);
+    }
+
+    private void openCamera() {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, "Temp pick");
+        values.put(MediaStore.Images.Media.TITLE, "Temp Desc");
+        imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent, CAMERA_CODE);
+    }
+    private void Permissions() {
+        Dexter.withContext(this)
+                .withPermissions(
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ).withListener(new MultiplePermissionsListener() {
+            @Override
+            public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
+        }).check();
+    }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == GALLERY_CODE && resultCode == RESULT_OK) {
+            assert data != null;
+            imageUri = data.getData();
+            String filePath = "Photos/" + "ImageBy: " + myId;
+
+            StorageReference reference = FirebaseStorage.getInstance().getReference(filePath);
+
+            reference.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Task<Uri> task = taskSnapshot.getMetadata().getReference().getDownloadUrl();
+                    task.addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        public void onSuccess(Uri uri) {
+                            String imageURL = uri.toString();
+
+                            DatabaseReference reference1 = FirebaseDatabase.getInstance().getReference();
+                            String now = ISO_8601_FORMAT.format(new Date());
+                            HashMap<String, Object> hashMap = new HashMap<>();
+                            hashMap.put("sender", myId);
+                            hashMap.put("receiver", friendId);
+                            hashMap.put("message", imageURL);
+                            hashMap.put("time", now);
+                            hashMap.put("isimage", true);
+                            hashMap.put("isseen", false);
+
+                            reference1.child("Chats").push().setValue(hashMap);
+                            DatabaseReference reference2 = FirebaseDatabase.getInstance().getReference("Chatslist").child(myId).child(friendId);
+                            reference1.addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    if(!snapshot.exists())
+                                    {
+                                        reference2.child("id").setValue(friendId);
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+
+                        }
+                    });
+                }
+            });
+        }
+        if (requestCode == CAMERA_CODE && resultCode == RESULT_OK) {
+            Uri uri = imageUri;
+            String filePath = "ChatImages/" + myId+"/";
+
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference(filePath);
+
+            storageReference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Task<Uri> task = taskSnapshot.getMetadata().getReference().getDownloadUrl();
+                    task.addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        @Override
+                        public void onSuccess(Uri uri) {
+                            String imageURL = uri.toString();
+
+                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+                            String now = ISO_8601_FORMAT.format(new Date());
+                            HashMap<String, Object> hashMap = new HashMap<>();
+                            hashMap.put("sender", myId);
+                            hashMap.put("receiver", friendId);
+                            hashMap.put("message", imageURL);
+                            hashMap.put("time", now);
+                            hashMap.put("isimage", true);
+                            hashMap.put("isseen", false);
+
+                            databaseReference.child("Chats").push().setValue(hashMap);
+                            DatabaseReference reference2 = FirebaseDatabase.getInstance().getReference("Chatslist").child(myId).child(friendId);
+                            databaseReference.addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    if(!snapshot.exists())
+                                    {
+                                        reference2.child("id").setValue(friendId);
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+
+                        }
+
+                    });
+
+                }
+            });
+        }
+    }
 
     private void seenMessage(final String friendId)
     {
@@ -247,7 +364,7 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
-    //displays the message depending on who sent it
+    //displays the active chat in the chats fragment
     private void readMessages(String myId, String friendId, String imageURL) {
 
         chatsList = new ArrayList<>();
@@ -284,16 +401,18 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void sendMessage (String myId, String friendId, String message){
-
             DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+            String now = ISO_8601_FORMAT.format(new Date());
             //storing the data in a hashmap before pushing to firebase
             HashMap<String, Object> hashMap = new HashMap<>();
             hashMap.put("sender", myId);
             hashMap.put("receiver", friendId);
             hashMap.put("message", message);
+            hashMap.put("time", now);
             hashMap.put("isseen", false);
-
             reference.child("Chats").push().setValue(hashMap); //assigning a unique ID for every message
+
+
 
             DatabaseReference reference1 = FirebaseDatabase.getInstance().getReference("Chatslist").child(myId).child(friendId);
             reference1.addValueEventListener(new ValueEventListener() {
