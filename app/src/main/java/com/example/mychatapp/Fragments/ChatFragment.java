@@ -10,11 +10,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.example.mychatapp.Adapters.UserAdapter;
 import com.example.mychatapp.Model.ChatsList;
 import com.example.mychatapp.Model.Users;
 import com.example.mychatapp.R;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -22,8 +25,16 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.core.TokenProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallations;
+import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.installations.internal.FidListener;
+import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ChatFragment extends Fragment {
@@ -34,7 +45,6 @@ public class ChatFragment extends Fragment {
     RecyclerView recyclerView;
     UserAdapter userAdapter;
     FirebaseUser firebaseUser;
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -70,7 +80,6 @@ public class ChatFragment extends Fragment {
 
             }
         });
-
         return view;
     }
 

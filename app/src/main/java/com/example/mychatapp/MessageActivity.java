@@ -31,6 +31,7 @@ import com.bumptech.glide.Glide;
 import com.example.mychatapp.Adapters.MessageAdapter;
 import com.example.mychatapp.Model.Chats;
 import com.example.mychatapp.Model.Users;
+import com.example.mychatapp.Services.PushNotificationService;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,6 +42,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -79,6 +81,7 @@ public class MessageActivity extends AppCompatActivity {
     public static final int GALLERY_CODE = 100;
     Uri imageUri = null;
     SimpleDateFormat ISO_8601_FORMAT = new SimpleDateFormat("HH:mm");
+    FirebaseMessaging firebaseMessaging;
 
 
 
@@ -87,6 +90,7 @@ public class MessageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_message);
 
+        FirebaseMessaging firebaseMessaging = FirebaseMessaging.getInstance();
 
         toolbar = findViewById(R.id.toolbar_message);
         setSupportActionBar(toolbar);
@@ -411,7 +415,6 @@ public class MessageActivity extends AppCompatActivity {
             hashMap.put("time", now);
             hashMap.put("isseen", false);
             reference.child("Chats").push().setValue(hashMap); //assigning a unique ID for every message
-
 
 
             DatabaseReference reference1 = FirebaseDatabase.getInstance().getReference("Chatslist").child(myId).child(friendId);
