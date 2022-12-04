@@ -21,4 +21,4 @@ The app will be a simple 1 to 1 chat application. In essence, it will have all o
 - The ability to log in using Facebook - **X**
 - The ability to see when a message was sent  - ✔ 
 
-**YOUTUBE LINK:** https://youtu.be/N9-GX4Wcodk
+**QUICK DEMO:** https://youtu.be/N9-GX4Wcodk
